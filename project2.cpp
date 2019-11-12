@@ -22,13 +22,36 @@ public:
     block* getPredecessor(){return this->Predecessor;}
 };
 
+class HeapNodes
+{
+private:
+    block* B;
+public:
+
+    HeapNodes(block* BLOCK=NULL):B(BLOCK){}
+
+    block* getBLOCK(){return this->B;}
+};
+
+class Heap
+{
+private:
+    HeapNodes* HeapArray;
+    int HeapSize;
+public:
+
+    Heap(int Size=10):HeapSize(Size){HeapArray = new HeapNodes[HeapSize];}
+    
+    void Heapify ();
+};
+
 void Initialize_BlockArray(int row, int col, block**arr, char** input)
 {
     for (int i=0; i<row; i++)
     {
         for (int j=0; j<col; j++)
         {
-            if (input[i][j] == '0') arr[i][j].setDistance(0);
+            if (input[i][j] == '0') arr[i][j].setDistance(999999999);
 
             else if (input[i][j] == '1');
 
@@ -46,6 +69,23 @@ void BlockArray(int row, int col, block**arr, char** input)
 {
 
 }
+
+//******checking function******//
+
+void print_dis_pre(int row, int col, block** arr)
+{
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            cout << arr[i][j].getDistance() << " ";
+        }
+
+        cout << endl;
+    }
+}
+
+//******end of checking******//
 
 int main()
 {
@@ -78,6 +118,8 @@ int main()
     }
 
     Initialize_BlockArray(rows, columns, dis_pre, input);
+
+
 
     return 0;
 }
