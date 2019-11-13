@@ -50,8 +50,11 @@ public:
     void Push(block* Blocks){StackArray[currentSize] = Blocks; currentSize++;}
 
     block* Top(){return this->StackArray[currentSize-1];}
+
+    void Pop(){this->StackArray[currentSize-1] = NULL; currentSize--;}
 };
 
+// is used in Dijkstra
 class BlockSet
 {
 private:
@@ -172,21 +175,19 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
 {
     int BlocksNum = Number_of_Blocks(row, col, input);
 
-    Stack S(BlocksNum+1);
-
     BlockSet Set(BlocksNum);
 
     Set.Initialize_BlockSet(row, col, arr);
 
-    S.Push(&arr[startRow][startColumn]);
+    int currentRow = startRow;
 
-    int currentRow = S.Top()->getRows();
-
-    int currentCol = S.Top()->getCols();
+    int currentCol = startColumn;
 
     while(Set.getCurrentSize() != 0)
     {
         int currentlength = arr[currentRow][currentCol].getDistance();
+
+        block* currentblock = &arr[currentRow][currentCol];
 
         if (currentRow+1 < row)
         {
@@ -194,6 +195,8 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
                 && arr[currentRow+1][currentCol].getDistance() > currentlength+1)
             {
                 arr[currentRow+1][currentCol].setDistance(currentlength+1);
+
+                arr[currentRow+1][currentCol].setPredecessor(currentblock);
             }
         }
 
@@ -203,6 +206,8 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
                 && arr[currentRow-1][currentCol].getDistance() > currentlength+1)
             {
                 arr[currentRow-1][currentCol].setDistance(currentlength+1);
+
+                arr[currentRow-1][currentCol].setPredecessor(currentblock);
             }
         }
 
@@ -212,6 +217,8 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
                 && arr[currentRow][currentCol+1].getDistance() > currentlength+1)
             {
                 arr[currentRow][currentCol+1].setDistance(currentlength+1);
+
+                arr[currentRow][currentCol+1].setPredecessor(currentblock);
             }
         }
 
@@ -221,17 +228,17 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
                 && arr[currentRow][currentCol-1].getDistance() > currentlength+1)
             {
                 arr[currentRow][currentCol-1].setDistance(currentlength+1);
+
+                arr[currentRow][currentCol-1].setPredecessor(currentblock);
             }
         }
 
-        S.Push(Set.ExtractMin());
+        block* temp = Set.ExtractMin();
 
-        currentRow = S.Top()->getRows();
+        currentRow = temp->getRows();
 
-        currentCol = S.Top()->getCols();
+        currentCol = temp->getCols();
     }
-
-    S.~Stack();
 
     Set.~BlockSet();
 }
