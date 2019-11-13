@@ -2,6 +2,7 @@
 
 using namespace std;
 
+#define MaxDistance 999999999
 
 // used to store the information of distance and predecessor
 class block
@@ -68,6 +69,8 @@ public:
 
     void addBlocks(block* Blocks){Set_of_blocks[currentSize] = Blocks; currentSize++;}
 
+    void Initialize_BlockSet(int row, int col, block** arr);
+
     int getCurrentSize(){return this->currentSize;}
 };
 
@@ -96,7 +99,21 @@ block*::BlockSet::ExtractMin()
     return MinBlock;
 }
 
-void Initialize_BlockArray(int row, int col, block**arr, char** input)
+void::BlockSet::Initialize_BlockSet(int row, int col, block** arr)
+{
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            if (arr[i][j].getDistance() == MaxDistance)
+            {
+                addBlocks(&arr[i][j]);
+            }
+        }
+    }
+}
+
+void Initialize_BlockArray(int row, int col, block** arr, char** input)
 {
     for (int i=0; i<row; i++)
     {
@@ -106,7 +123,7 @@ void Initialize_BlockArray(int row, int col, block**arr, char** input)
 
             arr[i][j].setCols(j);
 
-            if (input[i][j] == '0') arr[i][j].setDistance(999999999);
+            if (input[i][j] == '0') arr[i][j].setDistance(MaxDistance);
 
             else if (input[i][j] == '1');
 
@@ -120,9 +137,57 @@ void Initialize_BlockArray(int row, int col, block**arr, char** input)
     }
 }
 
-void BlockArray(int row, int col, block**arr, char** input)
+int Number_of_Blocks(int row, int col, char** input)
 {
+    int number = 0;
 
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            if (input[i][j] == '0') number++;
+        }
+    }
+
+    return number;
+}
+
+void starting_point(int row, int col, char** input, int* r, int* c)
+{
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            if (input[i][j] == 'R')
+            {
+                *r = i;
+
+                *c = j;
+            }
+        }
+    }
+}
+
+void BlockArray(int row, int col, block** arr, char** input, int startRow, int startColumn)
+{
+    int BlocksNum = Number_of_Blocks(row, col, input);
+
+    Stack S(BlocksNum);
+
+    BlockSet Set(BlocksNum);
+
+    Set.Initialize_BlockSet(row, col, arr);
+
+    S.Push(&arr[startRow][startColumn]);
+
+    int currentRow = S.Top()->getRows();
+
+    int currentCol = S.Top()->getCols();
+
+    while(Set.getCurrentSize() != 0)
+    {
+
+    }
 }
 
 //******checking function******//
@@ -174,7 +239,9 @@ int main()
 
     Initialize_BlockArray(rows, columns, dis_pre, input);
 
+    int startRow, startColumn;
 
+    starting_point(rows, columns, input, &startRow, &startColumn);
 
     return 0;
 }
