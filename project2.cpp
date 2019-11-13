@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <fstream>
 using namespace std;
 
 #define MaxDistance 999999999
@@ -13,6 +13,8 @@ private:
     int rows;
     int cols;
 public:
+
+    ~block(){}
 
     block(int dis=-1, block* pre=NULL, int rows=-1, int cols=-1)
     :Distance(dis), Predecessor(pre), rows(rows), cols(cols){}
@@ -45,14 +47,57 @@ public:
     ~Stack(){delete []StackArray;}
 
     Stack(int Size=10):StackSize(Size), currentSize(0)
-    {StackArray = new block*[StackSize];}
+    {StackArray = new block*[Size];}
 
-    void Push(block* Blocks){StackArray[currentSize] = Blocks; currentSize++;}
+    void Push(block* Blocks){this->StackArray[currentSize] = Blocks; currentSize++;}
 
     block* Top(){return this->StackArray[currentSize-1];}
 
     void Pop(){this->StackArray[currentSize-1] = NULL; currentSize--;}
 };
+
+class Queue
+{
+private:
+    block** QueueArray;
+    int QueueSize;
+    int Front;
+    int Rear;
+public:
+
+    ~Queue(){delete []QueueArray;}
+
+    Queue(int Size=100):QueueSize(Size), Front(0), Rear(0)
+    {QueueArray = new block*[Size];}
+
+    void Push(block* Blocks);
+
+    block* Top(){return this->QueueArray[Front];}
+
+    void Pop(){this->QueueArray[Front] = NULL; Front++;}
+
+
+};
+
+void::Queue::Push(block* Blocks)
+{
+    if (Rear >= QueueSize)
+    {
+        QueueSize += 100;
+
+        block** newQueue = new block*[QueueSize];
+
+        for (int i=Front; i<Rear; i++) newQueue[i] = QueueArray[i];
+
+        delete []QueueArray;
+
+        QueueArray = newQueue;
+    }
+
+    QueueArray[Rear] = Blocks;
+
+    Rear++;
+}
 
 // is used in Dijkstra
 class BlockSet
@@ -66,7 +111,7 @@ public:
     ~BlockSet(){delete []Set_of_blocks;}
 
     BlockSet(int Size=10):Size_of_set(Size), currentSize(0)
-    {Set_of_blocks = new block*[Size_of_set];}
+    {Set_of_blocks = new block*[Size];}
 
     block* ExtractMin();
 
@@ -102,6 +147,7 @@ block*::BlockSet::ExtractMin()
     return MinBlock;
 }
 
+// used in Dijkstra algorithm
 void::BlockSet::Initialize_BlockSet(int row, int col, block** arr)
 {
     for (int i=0; i<row; i++)
@@ -116,6 +162,7 @@ void::BlockSet::Initialize_BlockSet(int row, int col, block** arr)
     }
 }
 
+// used to initialize dis_pre. all walls have distance = -1
 void Initialize_BlockArray(int row, int col, block** arr, char** input)
 {
     for (int i=0; i<row; i++)
@@ -130,16 +177,12 @@ void Initialize_BlockArray(int row, int col, block** arr, char** input)
 
             else if (input[i][j] == '1');
 
-            else
-            {
-                arr[i][j].setDistance(0);
-
-                arr[i][j].setPredecessor(&arr[i][j]);
-            }
+            else arr[i][j].setDistance(0);
         }
     }
 }
 
+// return number of blocks need to clean initially. not include 'R'
 int Number_of_Blocks(int row, int col, char** input)
 {
     int number = 0;
@@ -155,6 +198,7 @@ int Number_of_Blocks(int row, int col, char** input)
     return number;
 }
 
+// find charging position
 void starting_point(int row, int col, char** input, int* r, int* c)
 {
     for (int i=0; i<row; i++)
@@ -171,6 +215,7 @@ void starting_point(int row, int col, char** input, int* r, int* c)
     }
 }
 
+// Dijkstra algorithm
 void BlockArray(int row, int col, block** arr, char** input, int startRow, int startColumn)
 {
     int BlocksNum = Number_of_Blocks(row, col, input);
@@ -243,18 +288,154 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
     Set.~BlockSet();
 }
 
+// return the step of going to farthest point
+int Go_To_Farthest(int row, int col, block** arr, bool** IfCleaned, Queue& q, int& BlocksLeft)
+{
+    int MaxSteps = 0;
+
+    block* MaxBlock = NULL;
+
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            if (IfCleaned[i][j] == 0)
+            {
+                if (arr[i][j].getDistance() > MaxSteps)
+                {
+                    MaxSteps = arr[i][j].getDistance();
+
+                    MaxBlock = &arr[i][j];
+                }
+            }
+        }
+    }
+
+    Stack S(MaxSteps+1);
+
+    S.Push(MaxBlock);
+
+    block* current = S.Top();
+
+    for (int i=1; i<=MaxSteps; i++)
+    {
+        current = current->getPredecessor();
+
+        S.Push(current);
+    }
+
+    for (int i=1; i<=MaxSteps+1; i++)
+    {
+        current = S.Top();
+
+        if (IfCleaned[current->getRows()][current->getCols()] == 0)
+        {
+            IfCleaned[current->getRows()][current->getCols()] = 1;
+
+            BlocksLeft--;
+        }
+
+        q.Push(current);
+
+        S.Pop();
+    }
+
+    S.~Stack();
+
+    return MaxSteps;
+}
+
+void cleaning_floor(int row, int col, int battery, block** arr,
+                    int startRow, int startCol, ofstream& OutputFile)
+{
+    bool** IfCleaned = new bool*[row];
+
+    int BlocksLeft = 0;
+
+    for (int i=0; i<row; i++)
+    {
+        IfCleaned[i] = new bool[col];
+    }
+
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            if (arr[i][j].getDistance() > 0)
+            {
+                IfCleaned[i][j] = 0;
+
+                BlocksLeft++;
+            }
+
+            else IfCleaned[i][j] = 1;
+        }
+    }
+
+    Queue q;
+
+    while(BlocksLeft)
+    {
+
+    }
+}
 //******checking function******//
 
-void print_dis_pre(int row, int col, block** arr)
+void print_dis_pre(int row, int col, block** arr, ofstream& OutputFile)
 {
     for (int i=0; i<row; i++)
     {
         for (int j=0; j<col; j++)
         {
-            cout << arr[i][j].getDistance() << " ";
+            OutputFile << arr[i][j].getDistance() << " ";
         }
 
-        cout << endl;
+        OutputFile << endl;
+    }
+}
+
+void go_single_path(int row, int col, block** arr, int& BlocksLeft,
+                    int startRow, int startCol, ofstream& OutputFile)
+{
+    bool** IfCleaned = new bool*[row];
+
+    for (int i=0; i<row; i++)
+    {
+        IfCleaned[i] = new bool[col];
+    }
+
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            if (arr[i][j].getDistance() > 0)
+            {
+                IfCleaned[i][j] = 0;
+
+                BlocksLeft++;
+            }
+
+            else IfCleaned[i][j] = 1;
+        }
+    }
+
+    Queue q;
+
+    int steps;
+
+    steps = Go_To_Farthest(row, col, arr, IfCleaned, q, BlocksLeft);
+
+    OutputFile << steps << endl;
+
+    block* current = NULL;
+
+    for (int i=1; i<=steps+1; i++)
+    {
+        current = q.Top();
+
+        OutputFile << current->getRows() << " " << current->getCols() << endl;
+
+        q.Pop();
     }
 }
 
@@ -262,11 +443,21 @@ void print_dis_pre(int row, int col, block** arr)
 
 int main()
 {
-    int rows, columns;
+    ifstream InputFile;
 
-    cin >> rows;
+    ofstream OutputFile;
 
-    cin >> columns;
+    InputFile.open("floor.data");
+
+    OutputFile.open("final.path");
+
+    int rows, columns, Battery;
+
+    InputFile >> rows;
+
+    InputFile >> columns;
+
+    InputFile >> Battery;
 
     char** input = new char*[rows];
 
@@ -279,7 +470,7 @@ int main()
     {
         for (int j=0; j<columns; j++)
         {
-            cin >> input[i][j];
+            InputFile >> input[i][j];
         }
     }
 
@@ -298,7 +489,11 @@ int main()
 
     BlockArray(rows, columns, dis_pre, input, startRow, startColumn);
 
-    print_dis_pre(rows, columns, dis_pre);
+    //print_dis_pre(rows, columns, dis_pre, OutputFile);
+
+    //int test = 10;
+
+    //go_single_path(rows, columns, dis_pre, test, startRow, startColumn, OutputFile);
 
     return 0;
 }
