@@ -9,41 +9,92 @@ class block
 private:
     int Distance;
     block* Predecessor;
+    int rows;
+    int cols;
 public:
 
-    block(int dis=-1, block* pre=NULL):Distance(dis), Predecessor(pre){}
+    block(int dis=-1, block* pre=NULL, int rows=-1, int cols=-1)
+    :Distance(dis), Predecessor(pre), rows(rows), cols(cols){}
 
     void setDistance(int dis){this->Distance = dis;}
 
     void setPredecessor(block* pre){this->Predecessor = pre;}
 
+    void setRows(int rows){this->rows = rows;}
+
+    void setCols(int cols){this->cols = cols;}
+
     int getDistance(){return this->Distance;}
 
     block* getPredecessor(){return this->Predecessor;}
+
+    int getRows(){return this->rows;}
+
+    int getCols(){return this->cols;}
 };
 
-class HeapNodes
+class Stack
 {
 private:
-    block* B;
+    block** StackArray;
+    int StackSize;
+    int currentSize;
 public:
 
-    HeapNodes(block* BLOCK=NULL):B(BLOCK){}
+    ~Stack(){delete []StackArray;}
 
-    block* getBLOCK(){return this->B;}
+    Stack(int Size=10):StackSize(Size), currentSize(0)
+    {StackArray = new block*[StackSize];}
+
+    void Push(block* Blocks){StackArray[currentSize] = Blocks;}
+
+    block* Top(){return this->StackArray[currentSize-1];}
 };
 
-class Heap
+class BlockSet
 {
 private:
-    HeapNodes* HeapArray;
-    int HeapSize;
+    block** Set_of_blocks;
+    int Size_of_set;
+    int currentSize;
 public:
 
-    Heap(int Size=10):HeapSize(Size){HeapArray = new HeapNodes[HeapSize];}
-    
-    void Heapify ();
+    ~BlockSet(){delete []Set_of_blocks;}
+
+    BlockSet(int Size=10):Size_of_set(Size), currentSize(0)
+    {Set_of_blocks = new block*[Size_of_set];}
+
+    block* ExtractMin();
+
+    void addBlocks(block* Blocks){Set_of_blocks[currentSize] = Blocks; currentSize++;}
+
+    int getCurrentSize(){return this->currentSize;}
 };
+
+block*::BlockSet::ExtractMin()
+{
+    block* MinBlock = Set_of_blocks[0];
+
+    int Min = 0;
+
+    for (int i=1; i<currentSize; i++)
+    {
+        if (Set_of_blocks[i]->getDistance() < MinBlock->getDistance())
+        {
+            MinBlock = Set_of_blocks[i];
+
+            Min = i;
+        }
+    }
+
+    Set_of_blocks[Min] = Set_of_blocks[currentSize-1];
+
+    Set_of_blocks[currentSize-1] = NULL;
+
+    currentSize--;
+
+    return MinBlock;
+}
 
 void Initialize_BlockArray(int row, int col, block**arr, char** input)
 {
@@ -51,6 +102,10 @@ void Initialize_BlockArray(int row, int col, block**arr, char** input)
     {
         for (int j=0; j<col; j++)
         {
+            arr[i][j].setRows(i);
+
+            arr[i][j].setCols(j);
+
             if (input[i][j] == '0') arr[i][j].setDistance(999999999);
 
             else if (input[i][j] == '1');
