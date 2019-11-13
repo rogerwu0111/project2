@@ -47,7 +47,7 @@ public:
     Stack(int Size=10):StackSize(Size), currentSize(0)
     {StackArray = new block*[StackSize];}
 
-    void Push(block* Blocks){StackArray[currentSize] = Blocks;}
+    void Push(block* Blocks){StackArray[currentSize] = Blocks; currentSize++;}
 
     block* Top(){return this->StackArray[currentSize-1];}
 };
@@ -172,7 +172,7 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
 {
     int BlocksNum = Number_of_Blocks(row, col, input);
 
-    Stack S(BlocksNum);
+    Stack S(BlocksNum+1);
 
     BlockSet Set(BlocksNum);
 
@@ -186,8 +186,54 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
 
     while(Set.getCurrentSize() != 0)
     {
+        int currentlength = arr[currentRow][currentCol].getDistance();
 
+        if (currentRow+1 < row)
+        {
+            if (arr[currentRow+1][currentCol].getDistance() != -1
+                && arr[currentRow+1][currentCol].getDistance() > currentlength+1)
+            {
+                arr[currentRow+1][currentCol].setDistance(currentlength+1);
+            }
+        }
+
+        if (currentRow-1 >= 0)
+        {
+            if (arr[currentRow-1][currentCol].getDistance() != -1
+                && arr[currentRow-1][currentCol].getDistance() > currentlength+1)
+            {
+                arr[currentRow-1][currentCol].setDistance(currentlength+1);
+            }
+        }
+
+        if (currentCol+1 < col)
+        {
+            if (arr[currentRow][currentCol+1].getDistance() != -1
+                && arr[currentRow][currentCol+1].getDistance() > currentlength+1)
+            {
+                arr[currentRow][currentCol+1].setDistance(currentlength+1);
+            }
+        }
+
+        if (currentCol-1 >= 0)
+        {
+            if (arr[currentRow][currentCol-1].getDistance() != -1
+                && arr[currentRow][currentCol-1].getDistance() > currentlength+1)
+            {
+                arr[currentRow][currentCol-1].setDistance(currentlength+1);
+            }
+        }
+
+        S.Push(Set.ExtractMin());
+
+        currentRow = S.Top()->getRows();
+
+        currentCol = S.Top()->getCols();
     }
+
+    S.~Stack();
+
+    Set.~BlockSet();
 }
 
 //******checking function******//
@@ -242,6 +288,10 @@ int main()
     int startRow, startColumn;
 
     starting_point(rows, columns, input, &startRow, &startColumn);
+
+    BlockArray(rows, columns, dis_pre, input, startRow, startColumn);
+
+    print_dis_pre(rows, columns, dis_pre);
 
     return 0;
 }
