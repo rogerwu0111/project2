@@ -289,7 +289,8 @@ void BlockArray(int row, int col, block** arr, char** input, int startRow, int s
 }
 
 // return the step of going to farthest point
-int Go_To_Farthest(int row, int col, block** arr, bool** IfCleaned, Queue& q, int& BlocksLeft)
+int Go_To_Farthest(int row, int col, block** arr, bool** IfCleaned,
+                   Queue& q, int& BlocksLeft, block* &current_position)
 {
     int MaxSteps = 0;
 
@@ -311,20 +312,22 @@ int Go_To_Farthest(int row, int col, block** arr, bool** IfCleaned, Queue& q, in
         }
     }
 
+    if (MaxBlock) current_position = MaxBlock;
+
     Stack S(MaxSteps+1);
 
     S.Push(MaxBlock);
 
     block* current = S.Top();
 
-    for (int i=1; i<=MaxSteps; i++)
+    for (int i=1; i<=MaxSteps-1; i++)
     {
         current = current->getPredecessor();
 
         S.Push(current);
     }
 
-    for (int i=1; i<=MaxSteps+1; i++)
+    for (int i=1; i<=MaxSteps; i++)
     {
         current = S.Top();
 
@@ -345,6 +348,211 @@ int Go_To_Farthest(int row, int col, block** arr, bool** IfCleaned, Queue& q, in
     return MaxSteps;
 }
 
+int Go_To_Nearest(int row, int col, block** arr, bool** IfCleaned,
+                  Queue& q, int& BlocksLeft, block* &current_position)
+{
+    int MinSteps = MaxDistance;
+
+    block* MinBlock = NULL;
+
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            if (IfCleaned[i][j] == 0)
+            {
+                if (arr[i][j].getDistance() < MinSteps && arr[i][j].getDistance() > 0)
+                {
+                    MinSteps = arr[i][j].getDistance();
+
+                    MinBlock = &arr[i][j];
+                }
+            }
+        }
+    }
+
+    if (MinBlock) current_position = MinBlock;
+
+    else MinSteps = 0;
+
+    Stack S(MinSteps+1);
+
+    S.Push(MinBlock);
+
+    block* current = S.Top();
+
+    for (int i=1; i<=MinSteps-1; i++)
+    {
+        current = current->getPredecessor();
+
+        S.Push(current);
+    }
+
+    for (int i=1; i<=MinSteps; i++)
+    {
+        current = S.Top();
+
+        if (IfCleaned[current->getRows()][current->getCols()] == 0)
+        {
+            IfCleaned[current->getRows()][current->getCols()] = 1;
+
+            BlocksLeft--;
+        }
+
+        q.Push(current);
+
+        S.Pop();
+    }
+
+    S.~Stack();
+
+    return MinSteps;
+}
+
+bool IsValid(int row, int col, int batteryLeft, block** arr,
+             bool** IfCleaned, int testRow, int testCol)
+{
+    if (testRow > row-1 || testCol > col-1 || testRow < 0 || testCol < 0) return 0;
+
+    else
+    {
+        int stepsNeeded = arr[testRow][testCol].getDistance();
+
+        if (stepsNeeded == 0) return 0;
+
+        else if (IfCleaned[testRow][testCol] == 0 && batteryLeft >= stepsNeeded) return 1;
+
+        else return 0;
+    }
+}
+
+bool IfCountinue(int row, int col, int batteryLeft, block** arr,
+                 bool** IfCleaned, int testRow, int testCol)
+{
+    if (IsValid(row, col, batteryLeft, arr, IfCleaned, testRow+1, testCol) ||
+        IsValid(row, col, batteryLeft, arr, IfCleaned, testRow-1, testCol) ||
+        IsValid(row, col, batteryLeft, arr, IfCleaned, testRow, testCol+1) ||
+        IsValid(row, col, batteryLeft, arr, IfCleaned, testRow, testCol-1)) return 1;
+
+    else return 0;
+}
+
+void Walk_Near_By(int row, int col, int& batteryLeft, block** arr, int& total_steps,
+                bool** IfCleaned, Queue& q, int &BlocksLeft, block* &current_position)
+{
+    int currentRow = current_position->getRows();
+
+    int currentCol = current_position->getCols();
+
+    while (current_position->getDistance() != 0 &&
+           IfCountinue(row, col, batteryLeft, arr, IfCleaned, currentRow, currentCol))
+    {
+        int MinDis = MaxDistance;
+
+        int nextRow = -1;
+
+        int nextCol = -1;
+
+        if (IsValid(row, col, batteryLeft-1, arr, IfCleaned, currentRow+1, currentCol))
+        {
+            if (MinDis > arr[currentRow+1][currentCol].getDistance())
+            {
+                MinDis = arr[currentRow+1][currentCol].getDistance();
+
+                nextRow = currentRow+1;
+
+                nextCol = currentCol;
+            }
+        }
+
+        if (IsValid(row, col, batteryLeft-1, arr, IfCleaned, currentRow-1, currentCol))
+        {
+            if (MinDis > arr[currentRow-1][currentCol].getDistance())
+            {
+                MinDis = arr[currentRow-1][currentCol].getDistance();
+
+                nextRow = currentRow-1;
+
+                nextCol = currentCol;
+            }
+        }
+
+        if (IsValid(row, col, batteryLeft-1, arr, IfCleaned, currentRow, currentCol+1))
+        {
+            if (MinDis > arr[currentRow][currentCol+1].getDistance())
+            {
+                MinDis = arr[currentRow][currentCol+1].getDistance();
+
+                nextRow = currentRow;
+
+                nextCol = currentCol+1;
+            }
+        }
+
+        if (IsValid(row, col, batteryLeft-1, arr, IfCleaned, currentRow, currentCol-1))
+        {
+            if (MinDis > arr[currentRow][currentCol-1].getDistance())
+            {
+                MinDis = arr[currentRow][currentCol-1].getDistance();
+
+                nextRow = currentRow;
+
+                nextCol = currentCol-1;
+            }
+        }
+
+        currentRow = nextRow;
+
+        currentCol = nextCol;
+
+        current_position = &arr[nextRow][nextCol];
+
+        IfCleaned[nextRow][nextCol] = 1;
+
+        q.Push(&arr[nextRow][nextCol]);
+
+        total_steps++;
+
+        batteryLeft--;
+
+        BlocksLeft--;
+    }
+}
+
+int Go_Back(int row, int col, block** arr, bool** IfCleaned,
+            Queue& q, int& BlocksLeft, block* &current_position)
+{
+    block* current = current_position;
+
+    int currentRow = current->getRows();
+
+    int currentCol = current->getCols();
+
+    int dis = current->getDistance();
+
+    for (int i=0; i<dis; i++)
+    {
+        current_position = current_position->getPredecessor();
+
+        current = current->getPredecessor();
+
+        currentRow = current->getRows();
+
+        currentCol = current->getCols();
+
+        if (IfCleaned[currentRow][currentCol] == 0)
+        {
+            IfCleaned[currentRow][currentCol] = 1;
+
+            BlocksLeft--;
+        }
+
+        q.Push(current);
+    }
+
+    return dis;
+}
+
 void cleaning_floor(int row, int col, int battery, block** arr,
                     int startRow, int startCol, ofstream& OutputFile)
 {
@@ -361,7 +569,7 @@ void cleaning_floor(int row, int col, int battery, block** arr,
     {
         for (int j=0; j<col; j++)
         {
-            if (arr[i][j].getDistance() > 0)
+            if (arr[i][j].getDistance() >= 0)
             {
                 IfCleaned[i][j] = 0;
 
@@ -372,11 +580,50 @@ void cleaning_floor(int row, int col, int battery, block** arr,
         }
     }
 
+    int total_steps = 0;
+
+    int batteryLeft = battery;
+
+    block* current_position = &arr[startRow][startCol];
+
     Queue q;
+
+    q.Push(&arr[startRow][startCol]);
 
     while(BlocksLeft)
     {
+        int steps = 0;
 
+        steps = Go_To_Nearest(row, col, arr, IfCleaned, q, BlocksLeft, current_position);
+
+        batteryLeft -= steps;
+
+        total_steps += steps;
+
+        Walk_Near_By(row, col, batteryLeft, arr, total_steps, IfCleaned, q, BlocksLeft, current_position);
+
+        if (current_position == &arr[startRow][startCol])
+        {
+            batteryLeft = battery;
+        }
+
+        else
+        {
+            steps = Go_Back(row, col, arr, IfCleaned, q, BlocksLeft, current_position);
+
+            batteryLeft = battery;
+
+            total_steps += steps;
+        }
+    }
+
+    OutputFile << total_steps << endl;
+
+    for (int i=0; i<total_steps+1; i++)
+    {
+        OutputFile << q.Top()->getRows() << " " << q.Top()->getCols() << endl;
+
+        q.Pop();
     }
 }
 //******checking function******//
@@ -408,7 +655,7 @@ void go_single_path(int row, int col, block** arr, int& BlocksLeft,
     {
         for (int j=0; j<col; j++)
         {
-            if (arr[i][j].getDistance() > 0)
+            if (arr[i][j].getDistance() >= 0)
             {
                 IfCleaned[i][j] = 0;
 
@@ -421,15 +668,22 @@ void go_single_path(int row, int col, block** arr, int& BlocksLeft,
 
     Queue q;
 
-    int steps;
+    int steps = 0;
 
-    steps = Go_To_Farthest(row, col, arr, IfCleaned, q, BlocksLeft);
+    block* current_position = &arr[startRow][startCol];
+
+    int batteryLeft = 100;
+
+    //steps = Go_To_Farthest(row, col, arr, IfCleaned, q, BlocksLeft, current_position);
+    steps = Go_To_Nearest(row, col, arr, IfCleaned, q, BlocksLeft, current_position);
+
+    Walk_Near_By(row, col, batteryLeft, arr, steps, IfCleaned, q, BlocksLeft, current_position);
 
     OutputFile << steps << endl;
 
     block* current = NULL;
 
-    for (int i=1; i<=steps+1; i++)
+    for (int i=1; i<=steps; i++)
     {
         current = q.Top();
 
@@ -491,9 +745,11 @@ int main()
 
     //print_dis_pre(rows, columns, dis_pre, OutputFile);
 
-    //int test = 10;
+    //int test = 1000;
 
     //go_single_path(rows, columns, dis_pre, test, startRow, startColumn, OutputFile);
+
+    cleaning_floor(rows, columns, Battery, dis_pre, startRow, startColumn, OutputFile);
 
     return 0;
 }
