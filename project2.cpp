@@ -67,7 +67,7 @@ public:
 
     ~Queue(){delete []QueueArray;}
 
-    Queue(int Size=100):QueueSize(Size), Front(0), Rear(0)
+    Queue(int Size=1000):QueueSize(Size), Front(0), Rear(0)
     {QueueArray = new block*[Size];}
 
     void Push(block* Blocks);
@@ -75,15 +75,13 @@ public:
     block* Top(){return this->QueueArray[Front];}
 
     void Pop(){this->QueueArray[Front] = NULL; Front++;}
-
-
 };
 
 void::Queue::Push(block* Blocks)
 {
     if (Rear >= QueueSize)
     {
-        QueueSize += 100;
+        QueueSize += 1000;
 
         block** newQueue = new block*[QueueSize];
 
@@ -429,15 +427,15 @@ bool IsValid(int row, int col, int batteryLeft, block** arr,
 bool IfCountinue(int row, int col, int batteryLeft, block** arr,
                  bool** IfCleaned, int testRow, int testCol)
 {
-    if (IsValid(row, col, batteryLeft, arr, IfCleaned, testRow+1, testCol) ||
-        IsValid(row, col, batteryLeft, arr, IfCleaned, testRow-1, testCol) ||
-        IsValid(row, col, batteryLeft, arr, IfCleaned, testRow, testCol+1) ||
-        IsValid(row, col, batteryLeft, arr, IfCleaned, testRow, testCol-1)) return 1;
+    if (IsValid(row, col, batteryLeft-1, arr, IfCleaned, testRow+1, testCol) ||
+        IsValid(row, col, batteryLeft-1, arr, IfCleaned, testRow-1, testCol) ||
+        IsValid(row, col, batteryLeft-1, arr, IfCleaned, testRow, testCol+1) ||
+        IsValid(row, col, batteryLeft-1, arr, IfCleaned, testRow, testCol-1)) return 1;
 
     else return 0;
 }
 
-void Walk_Near_By(int row, int col, int& batteryLeft, block** arr, int& total_steps,
+void Walk_Near_By(int row, int col, int batteryLeft, block** arr, int& total_steps,
                 bool** IfCleaned, Queue& q, int &BlocksLeft, block* &current_position)
 {
     int currentRow = current_position->getRows();
@@ -520,25 +518,21 @@ void Walk_Near_By(int row, int col, int& batteryLeft, block** arr, int& total_st
 }
 
 int Go_Back(int row, int col, block** arr, bool** IfCleaned,
-            Queue& q, int& BlocksLeft, block* &current_position)
+            Queue& q, int& BlocksLeft, block* current_position)
 {
-    block* current = current_position;
+    int currentRow = current_position->getRows();
 
-    int currentRow = current->getRows();
+    int currentCol = current_position->getCols();
 
-    int currentCol = current->getCols();
-
-    int dis = current->getDistance();
+    int dis = current_position->getDistance();
 
     for (int i=0; i<dis; i++)
     {
         current_position = current_position->getPredecessor();
 
-        current = current->getPredecessor();
+        currentRow = current_position->getRows();
 
-        currentRow = current->getRows();
-
-        currentCol = current->getCols();
+        currentCol = current_position->getCols();
 
         if (IfCleaned[currentRow][currentCol] == 0)
         {
@@ -547,7 +541,7 @@ int Go_Back(int row, int col, block** arr, bool** IfCleaned,
             BlocksLeft--;
         }
 
-        q.Push(current);
+        q.Push(current_position);
     }
 
     return dis;
@@ -615,6 +609,8 @@ void cleaning_floor(int row, int col, int battery, block** arr,
 
             total_steps += steps;
         }
+
+        current_position = &arr[startRow][startCol];
     }
 
     OutputFile << total_steps << endl;
@@ -627,6 +623,27 @@ void cleaning_floor(int row, int col, int battery, block** arr,
     }
 }
 //******checking function******//
+
+void print_pre(int row, int col, block** arr, ofstream& OutputFile)
+{
+    for (int i=0; i<row; i++)
+    {
+        for (int j=0; j<col; j++)
+        {
+            if (arr[i][j].getPredecessor())
+            {
+                OutputFile << arr[i][j].getPredecessor()->getDistance() << " ";
+            }
+
+            else
+            {
+                OutputFile << 0 << " ";
+            }
+        }
+
+        OutputFile << endl;
+    }
+}
 
 void print_dis_pre(int row, int col, block** arr, ofstream& OutputFile)
 {
@@ -737,11 +754,13 @@ int main()
 
     Initialize_BlockArray(rows, columns, dis_pre, input);
 
-    int startRow, startColumn;
+    int startRow = 0, startColumn = 0;
 
     starting_point(rows, columns, input, &startRow, &startColumn);
 
     BlockArray(rows, columns, dis_pre, input, startRow, startColumn);
+
+    //print_pre(rows, columns, dis_pre, OutputFile);
 
     //print_dis_pre(rows, columns, dis_pre, OutputFile);
 
