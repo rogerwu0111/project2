@@ -369,40 +369,43 @@ int Go_To_Nearest(int row, int col, block** arr, bool** IfCleaned,
         }
     }
 
-    if (MinBlock) current_position = MinBlock;
-
-    else MinSteps = 0;
-
-    Stack S(MinSteps+1);
-
-    S.Push(MinBlock);
-
-    block* current = S.Top();
-
-    for (int i=1; i<=MinSteps-1; i++)
+    if (MinBlock) 
     {
-        current = current->getPredecessor();
+        current_position = MinBlock;
 
-        S.Push(current);
-    }
+        Stack S(MinSteps+1);
 
-    for (int i=1; i<=MinSteps; i++)
-    {
-        current = S.Top();
+        S.Push(MinBlock);
 
-        if (IfCleaned[current->getRows()][current->getCols()] == 0)
+        block* current = S.Top();
+
+        for (int i=1; i<=MinSteps-1; i++)
         {
-            IfCleaned[current->getRows()][current->getCols()] = 1;
+            current = current->getPredecessor();
 
-            BlocksLeft--;
+            S.Push(current);
         }
 
-        q.Push(current);
+        for (int i=1; i<=MinSteps; i++)
+        {
+            current = S.Top();
 
-        S.Pop();
+            if (IfCleaned[current->getRows()][current->getCols()] == 0)
+            {
+                IfCleaned[current->getRows()][current->getCols()] = 1;
+
+                BlocksLeft--;
+            }
+
+            q.Push(current);
+
+            S.Pop();
+        }
+
+        S.~Stack();
     }
 
-    S.~Stack();
+    else MinSteps = 0;
 
     return MinSteps;
 }
@@ -442,7 +445,7 @@ void Walk_Near_By(int row, int col, int batteryLeft, block** arr, int& total_ste
 
     int currentCol = current_position->getCols();
 
-    while (current_position->getDistance() != 0 &&
+    while (current_position->getDistance() > 0 &&
            IfCountinue(row, col, batteryLeft, arr, IfCleaned, currentRow, currentCol))
     {
         int MinDis = MaxDistance;
@@ -596,19 +599,25 @@ void cleaning_floor(int row, int col, int battery, block** arr,
 
         Walk_Near_By(row, col, batteryLeft, arr, total_steps, IfCleaned, q, BlocksLeft, current_position);
 
-        if (current_position == &arr[startRow][startCol])
+        if (current_position == &arr[startRow][startCol]){}
+
+        else if (current_position == &arr[startRow][startCol] && IfCleaned[startRow][startCol] == 0)
         {
-            batteryLeft = battery;
+            IfCleaned[startRow][startCol] = 1;
+
+            BlocksLeft--;
+
+            q.Push(&arr[startRow][startCol]);
         }
 
         else
         {
             steps = Go_Back(row, col, arr, IfCleaned, q, BlocksLeft, current_position);
 
-            batteryLeft = battery;
-
             total_steps += steps;
         }
+
+        batteryLeft = battery;
 
         current_position = &arr[startRow][startCol];
     }
