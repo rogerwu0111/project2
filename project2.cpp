@@ -599,7 +599,7 @@ void cleaning_floor(int row, int col, int battery, block** arr,
 
         Walk_Near_By(row, col, batteryLeft, arr, total_steps, IfCleaned, q, BlocksLeft, current_position);
 
-        if (current_position == &arr[startRow][startCol]){}
+        if (current_position == &arr[startRow][startCol] && IfCleaned[startRow][startCol] == 1){}
 
         else if (current_position == &arr[startRow][startCol] && IfCleaned[startRow][startCol] == 0)
         {
@@ -624,12 +624,15 @@ void cleaning_floor(int row, int col, int battery, block** arr,
 
     OutputFile << total_steps << endl;
 
+    if (total_steps == 0) total_steps++;
+    
     for (int i=0; i<total_steps+1; i++)
     {
         OutputFile << q.Top()->getRows() << " " << q.Top()->getCols() << endl;
 
         q.Pop();
     }
+    
 }
 //******checking function******//
 
