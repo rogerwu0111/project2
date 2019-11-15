@@ -772,6 +772,13 @@ int main()
 
     BlockArray(rows, columns, dis_pre, input, startRow, startColumn);
 
+    for (int i=0; i<rows; i++)
+    {
+        delete [] input[i];
+    }
+
+    delete [] input;
+
     //print_pre(rows, columns, dis_pre, OutputFile);
 
     //print_dis_pre(rows, columns, dis_pre, OutputFile);
