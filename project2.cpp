@@ -386,16 +386,13 @@ int Go_To_Nearest(int row, int col, block** arr, bool** IfCleaned,
             S.Push(current);
         }
 
+        IfCleaned[current_position->getRows()][current_position->getCols()] = 1;
+
+        BlocksLeft--;
+
         for (int i=1; i<=MinSteps; i++)
         {
             current = S.Top();
-
-            if (IfCleaned[current->getRows()][current->getCols()] == 0)
-            {
-                IfCleaned[current->getRows()][current->getCols()] = 1;
-
-                BlocksLeft--;
-            }
 
             q.Push(current);
 
@@ -635,7 +632,7 @@ void cleaning_floor(int row, int col, int battery, block** arr,
     
 }
 //******checking function******//
-
+/*
 void print_pre(int row, int col, block** arr, ofstream& OutputFile)
 {
     for (int i=0; i<row; i++)
@@ -721,7 +718,7 @@ void go_single_path(int row, int col, block** arr, int& BlocksLeft,
         q.Pop();
     }
 }
-
+*/
 //******end of checking******//
 
 int main()
